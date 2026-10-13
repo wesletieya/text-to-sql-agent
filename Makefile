@@ -1,11 +1,11 @@
-MODEL ?= claude-sonnet-5-5
+MODEL ?= qwen2.5-coder:7b
 
 .PHONY: data test lint format eval api ui app
 
 data:
-	uv run python -m scripts.download_olist
-	uv run python -m scripts.generate_tpch
-	uv run python -m scripts.build_lakehouse
+	uv run --env-file .env python -m scripts.download_olist
+	uv run --env-file .env python -m scripts.generate_tpch
+	uv run --env-file .env python -m scripts.build_lakehouse
 
 test:
 	uv run pytest -q

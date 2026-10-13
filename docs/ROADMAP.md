@@ -8,7 +8,7 @@ Cocher les cases seulement quand le critère de fin est vérifié.
 - [x] `Makefile` avec `data`, `test`, `lint`, `eval`, `app`
 - [x] `.gitignore` (data/, *.duckdb, .env, kaggle.json, eval/results/*.jsonl)
 - [x] `.env.example`, `README.md` minimal, licence MIT
-- [ ] CI GitHub Actions : lint + tests
+- [x] CI GitHub Actions : lint + tests
 - **Fin** : `make lint && make test` passent sur un repo vide de logique.
 
 ## Phase 1 — Données et lakehouse
