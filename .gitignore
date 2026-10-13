@@ -1,0 +1,23 @@
+# Data and secrets: never commit
+data/
+*.duckdb
+*.duckdb.wal
+.env
+kaggle.json
+eval/results/*.jsonl
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code local overrides
+.claude/settings.local.json
