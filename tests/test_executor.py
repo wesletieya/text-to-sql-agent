@@ -10,19 +10,8 @@ import duckdb
 import pytest
 
 from agent.executor import QueryTimeoutError, connect, execute
-from scripts.build_lakehouse import build_bronze, build_gold, build_silver
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "olist"
-
-
-@pytest.fixture(scope="module")
-def lake_file(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    path = tmp_path_factory.mktemp("lake") / "lake.duckdb"
-    with duckdb.connect(str(path)) as con:
-        build_bronze(con, FIXTURES_DIR)
-        build_silver(con)
-        build_gold(con)
-    return path
 
 
 @pytest.fixture

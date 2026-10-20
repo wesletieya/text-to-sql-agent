@@ -1,6 +1,6 @@
 MODEL ?= qwen2.5-coder:7b
 
-.PHONY: data catalog test lint format eval api ui app
+.PHONY: data catalog ask test lint format eval api ui app
 
 data:
 	uv run --env-file .env python -m scripts.download_olist
@@ -9,6 +9,9 @@ data:
 
 catalog:
 	uv run python -m scripts.build_catalog
+
+ask:
+	uv run --env-file .env python -m agent.pipeline "$(Q)" --model $(MODEL)
 
 test:
 	uv run pytest -q
