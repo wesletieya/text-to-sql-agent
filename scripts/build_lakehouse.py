@@ -109,6 +109,93 @@ SILVER_TABLES = {
     """,
 }
 
+GOLD_TABLES = {
+    "dim_customer": """
+        SELECT
+            c.customer_unique_id,
+            arg_max(c.zip_code_prefix, o.purchased_at) AS zip_code_prefix,
+            arg_max(c.city, o.purchased_at) AS city,
+            arg_max(c.state, o.purchased_at) AS state
+        FROM silver.customers AS c
+        JOIN silver.orders AS o USING (customer_id)
+        GROUP BY c.customer_unique_id
+    """,
+    "dim_seller": """
+        SELECT seller_id, zip_code_prefix, city, state
+        FROM silver.sellers
+    """,
+    "dim_product": """
+        SELECT
+            p.product_id,
+            coalesce(p.category_name, 'unknown') AS category_pt,
+            coalesce(t.category_name_en, p.category_name, 'unknown') AS category_en,
+            p.photos_qty,
+            p.weight_g,
+            p.length_cm,
+            p.height_cm,
+            p.width_cm
+        FROM silver.products AS p
+        LEFT JOIN silver.category_translation AS t USING (category_name)
+    """,
+    "dim_date": """
+        SELECT
+            CAST(d AS DATE) AS date,
+            year(d) AS year,
+            quarter(d) AS quarter,
+            month(d) AS month,
+            monthname(d) AS month_name,
+            day(d) AS day,
+            isodow(d) AS day_of_week,
+            dayname(d) AS day_name,
+            isodow(d) >= 6 AS is_weekend
+        FROM generate_series(DATE '2016-01-01', DATE '2018-12-31', INTERVAL 1 DAY) AS t(d)
+    """,
+    "fact_orders": """
+        SELECT
+            o.order_id,
+            c.customer_unique_id,
+            o.order_status,
+            o.purchased_at,
+            CAST(o.purchased_at AS DATE) AS purchase_date,
+            o.approved_at,
+            o.delivered_carrier_at,
+            o.delivered_customer_at,
+            o.estimated_delivery_at,
+            CASE WHEN o.order_status = 'delivered' AND o.delivered_customer_at IS NOT NULL
+                THEN date_diff('day', o.purchased_at, o.delivered_customer_at)
+            END AS delivery_days,
+            CASE WHEN o.order_status = 'delivered' AND o.delivered_customer_at IS NOT NULL
+                THEN CAST(o.delivered_customer_at AS DATE) > CAST(o.estimated_delivery_at AS DATE)
+            END AS is_late,
+            coalesce(i.items_count, 0) AS items_count,
+            coalesce(i.items_value, 0) AS items_value,
+            coalesce(i.freight_value, 0) AS freight_value
+        FROM silver.orders AS o
+        JOIN silver.customers AS c USING (customer_id)
+        LEFT JOIN (
+            SELECT
+                order_id,
+                count(*) AS items_count,
+                sum(price) AS items_value,
+                sum(freight_value) AS freight_value
+            FROM silver.order_items
+            GROUP BY order_id
+        ) AS i USING (order_id)
+    """,
+    "fact_order_items": """
+        SELECT
+            order_id, order_item_id, product_id, seller_id, shipping_limit_at, price, freight_value
+        FROM silver.order_items
+    """,
+    "fact_payments": """
+        SELECT order_id, payment_sequential, payment_type, installments, payment_value
+        FROM silver.order_payments
+    """,
+    "fact_reviews": """
+        SELECT review_id, order_id, score, comment_title, comment_message, created_at, answered_at
+        FROM silver.order_reviews
+    """,
+}
 
 
 def build_bronze(con: duckdb.DuckDBPyConnection, raw_dir: Path = RAW_DIR) -> None:
@@ -129,6 +216,11 @@ def build_silver(con: duckdb.DuckDBPyConnection) -> None:
     for table, query in SILVER_TABLES.items():
         con.execute(f"CREATE OR REPLACE TABLE silver.{table} AS {query}")
 
+def build_gold(con: duckdb.DuckDBPyConnection) -> None:
+    """Build the star schema (dimensions and facts) in the gold schema."""
+    con.execute("CREATE SCHEMA IF NOT EXISTS gold")
+    for table, query in GOLD_TABLES.items():
+        con.execute(f"CREATE OR REPLACE TABLE gold.{table} AS {query}")
 
 def print_summary(con: duckdb.DuckDBPyConnection, schema: str) -> None:
     """Print row counts for every table in schema."""
@@ -147,6 +239,12 @@ def main() -> None:
     with duckdb.connect(str(LAKE_PATH)) as con:
         build_bronze(con)
         print_summary(con, "bronze")
+        build_silver(con)
+        print_summary(con, "silver")
+        build_gold(con)
+        print_summary(con, "gold")
+
+
 
 
 if __name__ == "__main__":
