@@ -1,11 +1,14 @@
 MODEL ?= qwen2.5-coder:7b
 
-.PHONY: data test lint format eval api ui app
+.PHONY: data catalog test lint format eval api ui app
 
 data:
 	uv run --env-file .env python -m scripts.download_olist
 	uv run --env-file .env python -m scripts.generate_tpch
 	uv run --env-file .env python -m scripts.build_lakehouse
+
+catalog:
+	uv run python -m scripts.build_catalog
 
 test:
 	uv run pytest -q

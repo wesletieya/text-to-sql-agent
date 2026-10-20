@@ -1,0 +1,70 @@
+# Verified question -> SQL examples shown to the LLM.
+# Rule: none of these questions may appear in eval/dataset.jsonl.
+examples:
+  - question: How many customers placed more than one order?
+    sql: |
+      SELECT count(*) AS repeat_customers
+      FROM (
+          SELECT customer_unique_id
+          FROM gold.fact_orders
+          GROUP BY customer_unique_id
+          HAVING count(DISTINCT order_id) >= 2
+      ) AS t
+
+  - question: What was the monthly revenue in 2017?
+    sql: |
+      SELECT date_trunc('month', purchase_date) AS month, sum(items_value) AS revenue
+      FROM gold.fact_orders
+      WHERE year(purchase_date) = 2017
+        AND order_status NOT IN ('canceled', 'unavailable')
+      GROUP BY month
+      ORDER BY month
+
+  - question: Which 5 product categories generated the most revenue?
+    sql: |
+      SELECT p.category_en, sum(i.price) AS revenue
+      FROM gold.fact_order_items AS i
+      JOIN gold.fact_orders AS o ON o.order_id = i.order_id
+      JOIN gold.dim_product AS p ON p.product_id = i.product_id
+      WHERE o.order_status NOT IN ('canceled', 'unavailable')
+      GROUP BY p.category_en
+      ORDER BY revenue DESC
+      LIMIT 5
+
+  - question: What is the late delivery rate by customer state?
+    sql: |
+      SELECT c.state, avg(CAST(o.is_late AS INTEGER)) AS late_rate, count(*) AS delivered_orders
+      FROM gold.fact_orders AS o
+      JOIN gold.dim_customer AS c ON c.customer_unique_id = o.customer_unique_id
+      WHERE o.order_status = 'delivered' AND o.is_late IS NOT NULL
+      GROUP BY c.state
+      ORDER BY late_rate DESC
+
+  - question: Do late deliveries get worse review scores?
+    sql: |
+      SELECT o.is_late, avg(r.score) AS avg_score, count(*) AS reviews
+      FROM gold.fact_reviews AS r
+      JOIN gold.fact_orders AS o ON o.order_id = r.order_id
+      WHERE o.is_late IS NOT NULL
+      GROUP BY o.is_late
+
+  - question: What share of orders is paid with each payment type?
+    sql: |
+      SELECT payment_type,
+             count(DISTINCT order_id) AS orders,
+             count(DISTINCT order_id) / (SELECT count(DISTINCT order_id) FROM gold.fact_payments)
+                 AS share
+      FROM gold.fact_payments
+      GROUP BY payment_type
+      ORDER BY orders DESC
+
+  - question: Which 5 TPC-H nations generate the most revenue from their customers?
+    sql: |
+      SELECT n.n_name AS nation, sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue
+      FROM tpch.lineitem AS l
+      JOIN tpch.orders AS o ON o.o_orderkey = l.l_orderkey
+      JOIN tpch.customer AS c ON c.c_custkey = o.o_custkey
+      JOIN tpch.nation AS n ON n.n_nationkey = c.c_nationkey
+      GROUP BY n.n_name
+      ORDER BY revenue DESC
+      LIMIT 5
