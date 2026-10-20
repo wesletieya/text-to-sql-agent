@@ -210,17 +210,21 @@ def build_bronze(con: duckdb.DuckDBPyConnection, raw_dir: Path = RAW_DIR) -> Non
             "SELECT * FROM read_csv(?, header = true, all_varchar = true)",
             [str(path)],
         )
+
+
 def build_silver(con: duckdb.DuckDBPyConnection) -> None:
     """Clean bronze into typed, consistently named tables in the silver schema."""
     con.execute("CREATE SCHEMA IF NOT EXISTS silver")
     for table, query in SILVER_TABLES.items():
         con.execute(f"CREATE OR REPLACE TABLE silver.{table} AS {query}")
 
+
 def build_gold(con: duckdb.DuckDBPyConnection) -> None:
     """Build the star schema (dimensions and facts) in the gold schema."""
     con.execute("CREATE SCHEMA IF NOT EXISTS gold")
     for table, query in GOLD_TABLES.items():
         con.execute(f"CREATE OR REPLACE TABLE gold.{table} AS {query}")
+
 
 def print_summary(con: duckdb.DuckDBPyConnection, schema: str) -> None:
     """Print row counts for every table in schema."""
@@ -243,8 +247,6 @@ def main() -> None:
         print_summary(con, "silver")
         build_gold(con)
         print_summary(con, "gold")
-
-
 
 
 if __name__ == "__main__":
