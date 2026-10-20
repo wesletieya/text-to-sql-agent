@@ -9,7 +9,7 @@ import duckdb
 import pytest
 
 from agent.executor import connect
-from agent.llm import LLMResponse
+from agent.llm import LLMError, LLMResponse
 from agent.pipeline import Agent
 from agent.schema_retriever import load_catalog
 
@@ -122,3 +122,15 @@ def test_tokens_are_summed_over_attempts(con: duckdb.DuckDBPyConnection) -> None
     result, _ = run(con, [INVALID_COLUMN, VALID])
     assert result.input_tokens == 200
     assert result.output_tokens == 20
+
+
+class BrokenLLM(FakeLLM):
+    def complete(self, system: str, user: str, schema: dict[str, Any]) -> LLMResponse:
+        raise LLMError("The prompt was truncated")
+
+
+def test_infrastructure_errors_propagate_instead_of_counting_as_wrong(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    with pytest.raises(LLMError, match="truncated"):
+        Agent(BrokenLLM([]), con, CATALOG).answer("How many orders?")

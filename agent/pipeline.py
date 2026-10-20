@@ -68,6 +68,8 @@ class Agent:
         for _ in range(1 + MAX_CORRECTIONS):
             attempt = Attempt()
             result.attempts.append(attempt)
+            # Other LLMErrors (truncated prompt, missing key, refusal) are infrastructure
+            # problems, not a wrong answer: they propagate to the caller.
             try:
                 generation, response = generate(
                     self.llm, question, self.schema_text, self.fewshot_text, feedback
@@ -77,10 +79,6 @@ class Agent:
                 attempt.error = str(error)[:MAX_ERROR_CHARS]
                 feedback.append(attempt.error)
                 continue
-            except LLMError as error:
-                attempt.error = str(error)
-                result.message = attempt.error
-                break
             self._count_tokens(result, response)
 
             if generation.out_of_scope:
@@ -163,8 +161,11 @@ def main() -> None:
     logger.setLevel(logging.INFO)
 
     with connect(LAKE_PATH) as con:
-        agent = Agent(get_llm(args.model), con, load_catalog())
-        print_result(agent.answer(args.question))
+        try:
+            agent = Agent(get_llm(args.model), con, load_catalog())
+            print_result(agent.answer(args.question))
+        except LLMError as error:
+            raise SystemExit(f"LLM error: {error}") from error
 
 
 if __name__ == "__main__":

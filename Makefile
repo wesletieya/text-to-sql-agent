@@ -1,6 +1,7 @@
 MODEL ?= qwen2.5-coder:7b
+RUNS ?= 3
 
-.PHONY: data catalog ask test lint format eval api ui app
+.PHONY: data catalog ask test lint format eval report api ui app
 
 data:
 	uv run --env-file .env python -m scripts.download_olist
@@ -25,7 +26,10 @@ format:
 	uv run ruff format .
 
 eval:
-	uv run python -m eval.run --model $(MODEL) --runs 3
+	uv run --env-file .env python -m eval.run --model $(MODEL) --runs $(RUNS)
+
+report:
+	uv run python -m eval.report
 
 api:
 	uv run uvicorn app.api:app --reload
