@@ -46,7 +46,8 @@ Autres modèles : `groq/<modèle>` (`GROQ_API_KEY`), `gemini/<modèle>` (`GEMINI
 | `make test` | Lance les tests |
 | `make lint` | Vérifie le style (ruff) |
 | `make eval MODEL=<nom>` | Lance l'évaluation d'un modèle |
-| `make app` | Lance l'API et l'interface |
+| `make app` | Lance l'API (http://localhost:8000/docs) et l'interface (http://localhost:8501) |
+| `docker compose up --build` | Même chose dans des conteneurs (Ollama reste sur la machine hôte) |
 
 ## Licence
 

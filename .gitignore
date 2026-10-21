@@ -5,6 +5,7 @@ data/
 .env
 kaggle.json
 eval/results/*.jsonl
+logs/
 
 # Python
 .venv/

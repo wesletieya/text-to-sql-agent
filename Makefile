@@ -32,11 +32,10 @@ report:
 	uv run python -m eval.report
 
 api:
-	uv run uvicorn app.api:app --reload
+	uv run --env-file .env uvicorn app.api:app --port 8000
 
 ui:
 	uv run streamlit run app/ui.py
 
-# Phase 7: will start the API and the UI together.
 app:
-	@echo "make app arrives in Phase 7; meanwhile use 'make api' and 'make ui' in two terminals."
+	uv run --env-file .env python -m app.run

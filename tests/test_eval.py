@@ -8,11 +8,11 @@ from pathlib import Path
 import duckdb
 import pytest
 
+from agent.pricing import cost_usd, load_pricing
 from agent.schema_retriever import load_catalog, load_fewshot
 from eval.check_dataset import gold_problems, load_dataset, static_problems
 from eval.metrics import is_correct, results_match
 from eval.report import pareto_front, render
-from eval.run import cost_usd, load_pricing
 
 ROOT = Path(__file__).parent.parent
 DATASET = load_dataset(ROOT / "eval/dataset.jsonl")

@@ -1,0 +1,31 @@
+# Prerequisites: `make data` (builds data/lake.duckdb) and Ollama running on the host
+# with OLLAMA_CONTEXT_LENGTH=8192. Then: docker compose up --build -> http://localhost:8501
+services:
+  api:
+    build: .
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MODEL: ${MODEL:-qwen2.5-coder:7b}
+      OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
+      LAKE_PATH: /data/lake.duckdb
+      FEEDBACK_PATH: /logs/feedback.jsonl
+    volumes:
+      - ./data:/data:ro # the lakehouse is mounted read-only
+      - ./logs:/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+
+  ui:
+    build: .
+    command: streamlit run app/ui.py --server.address 0.0.0.0 --server.port 8501
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api

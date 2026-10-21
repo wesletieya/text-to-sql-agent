@@ -11,34 +11,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from agent.executor import connect, execute
 from agent.llm import LLMError, get_llm
 from agent.pipeline import Agent
+from agent.pricing import PRICING_PATH, cost_usd, load_pricing
 from agent.schema_retriever import load_catalog, load_fewshot
 from eval.check_dataset import Question, gold_problems, load_dataset, static_problems
 from eval.metrics import is_correct, results_match
 from eval.report import print_summary
 
 RESULTS_DIR = Path("eval/results")
-PRICING_PATH = Path("eval/pricing.yaml")
 LAKE_PATH = Path(os.environ.get("LAKE_PATH", "data/lake.duckdb"))
-
-
-def load_pricing(path: Path = PRICING_PATH) -> dict[str, Any]:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))["models"]
-
-
-def cost_usd(
-    pricing: dict[str, Any], model: str, input_tokens: int, output_tokens: int
-) -> float | None:
-    """Cost from eval/pricing.yaml; None when the model has no recorded price."""
-    price = pricing.get(model)
-    if price is None:
-        return None
-    total = input_tokens * price["input_per_mtok"] + output_tokens * price["output_per_mtok"]
-    return round(total / 1_000_000, 6)
 
 
 def results_path(model: str) -> Path:
