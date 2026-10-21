@@ -10,7 +10,7 @@ Le projet couvre toute la chaîne : ingestion et modélisation des données, cou
 de sécurité, agent LLM avec auto-correction, banc d'évaluation, API et interface web. Il fonctionne
 **entièrement en local et gratuitement** avec un modèle open-weights (Qwen 2.5 Coder 7B via Ollama).
 
-!<img width="1738" height="700" alt="image" src="https://github.com/user-attachments/assets/8ac5b228-d052-4f0e-8b57-b90751174cce" />
+<img width="1738" height="700" alt="image" src="https://github.com/user-attachments/assets/8ac5b228-d052-4f0e-8b57-b90751174cce" />
 
 
 ## Points clés
