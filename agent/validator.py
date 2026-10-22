@@ -1,6 +1,6 @@
 """Validate LLM-generated SQL on the sqlglot AST before it reaches the database.
 
-Rules (see CLAUDE.md): exactly one statement, a query only (no DML/DDL/commands),
+Rules: exactly one statement, a query only (no DML/DDL/commands),
 only allowed schema-qualified tables (CTEs excepted), every column must resolve,
 no file or system access functions, and a LIMIT is always present.
 """
